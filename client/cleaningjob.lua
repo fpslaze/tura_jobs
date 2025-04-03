@@ -12,6 +12,9 @@ local NPC <const> = {
     }
 }
 
+local page = {}
+
+local pageEntrys = {}
 
 local cleaningPoints = { vec3(0, 0, 0), vec3(0, 0, 0), vec3(0, 0, 0), vec3(0, 0, 0), vec3(0, 0, 0), vec3(0, 0, 0), vec3(
     0, 0, 0), vec3(0, 0, 0) }
@@ -85,4 +88,8 @@ end
 
 function StartWorkAnim()
 
+end
+
+function AddPage()
+    page = { name = "", payoutforaction = 5, difficulty = "easy" }
 end
