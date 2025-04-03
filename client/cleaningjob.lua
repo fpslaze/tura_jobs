@@ -14,7 +14,7 @@ local NPC <const> = {
 
 
 local cleaningPoints = { vec3(0, 0, 0), vec3(0, 0, 0), vec3(0, 0, 0), vec3(0, 0, 0), vec3(0, 0, 0), vec3(0, 0, 0), vec3(
-0, 0, 0), vec3(0, 0, 0) }
+    0, 0, 0), vec3(0, 0, 0) }
 
 local paycheck = 0
 
@@ -32,6 +32,7 @@ Citizen.CreateThread(function()
             IsControlJustReleased(0, 0x760A9C6F) then
             OpenMenu()
         end
+        Citizen.Wait(1)
     end
 end)
 
@@ -78,6 +79,7 @@ function StartWork()
             IsControlJustReleased(0, 0x760A9C6F) then
             StartWorkAnim()
         end
+        Citizen.Wait(1)
     end
 end
 
