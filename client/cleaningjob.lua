@@ -79,6 +79,7 @@ WorkCore.StartWork = function()
     currentJobPoint = cleaningPoints[math.random(1, #cleaningPoints)]
 
     local __player = PlayerId()
+    local isPressed = false
 
     while true do
         if GetDistance(GetEntityCoords(__player), currentJobPoint) <= 2 and
