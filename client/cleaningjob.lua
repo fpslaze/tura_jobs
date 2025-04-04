@@ -12,7 +12,7 @@ local NPC <const> = {
     }
 }
 
-local WorkCore
+local WorkCore = {}
 
 local page = {}
 
@@ -41,9 +41,9 @@ Citizen.CreateThread(function()
     end
 end)
 
-function OpenMenu(page)
-    if not page then
-        print("No Page found!")
+function OpenMenu(data)
+    if not data then
+        data = "default"
     end
 end
 
