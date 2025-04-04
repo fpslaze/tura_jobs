@@ -1,3 +1,6 @@
+local Core = exports.vorp_core:GetCore()
+
+
 local NPC <const> = {
     [1] = {
         name = "Albert",
@@ -51,8 +54,7 @@ function GetDistance(coords1, coords2)
     return #coords1 - coords2
 end
 
----@param coords vector3
----@param name string
+---@param npcid integer
 function CreateNPC(npcid)
     while not HasModelLoaded(NPC[npcid].modelhash) do
         Wait(10)
@@ -66,11 +68,13 @@ local currentJobPoint = nil
 
 WorkCore.StartWork = function()
     if inWork then
-        return "Du hast bereits einen aktiven Job"
+        Core.NotifyTip("Du hast bereits eine Aktive Aufgabe!", 4000)
+        return
     end
 
     if inWork == false and paycheck ~= 0 then
-        return "Hole zuerst deinen Paycheck ab bevor du einen neuen Job anfangen kannst!"
+        Core.NotifyTip("Hole zuerst deinen Paycheck ab bevor du einen neuen Job anfangen kannst!", 4000)
+        return
     end
 
     print("Du hast den Job erfolgreich gestartet")
@@ -94,6 +98,21 @@ function StartWorkAnim()
 
 end
 
-function AddPage()
-    page = { name = "", payoutforaction = 5, difficulty = "easy" }
+---@param name string
+---@param payout integer
+---@param diff string
+---@param neededTasks number
+function AddPage(name, payout, diff, neededTasks)
+    page = { name = name, payoutforaction = payout, difficulty = diff, neededtaskstoearn = neededTasks }
 end
+
+function GetPage(name)
+    if page[name] == nil then
+        return 0
+    end
+end
+
+RegisterCommand("testnpc", function()
+    CreateNPC(1)
+    Core.NotifyTip("Du hast den NPC mit der id 1 gesetzt!")
+end, false)
