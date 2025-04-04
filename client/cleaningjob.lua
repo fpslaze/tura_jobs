@@ -12,6 +12,8 @@ local NPC <const> = {
     }
 }
 
+local WorkCore
+
 local page = {}
 
 local pageEntrys = {}
@@ -61,7 +63,8 @@ end
 
 local inWork = false
 local currentJobPoint = nil
-function StartWork()
+
+WorkCore.StartWork = function()
     if inWork then
         return "Du hast bereits einen aktiven Job"
     end
