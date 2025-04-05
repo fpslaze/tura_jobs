@@ -16,8 +16,6 @@ Citizen.CreateThread(function()
     PromptSetText(promptJobStart, CreateVarString(10, "LITERAL_STRING", str))
     PromptSetStandardMode(promptJobStart, true)
     PromptRegisterEnd(promptJobStart)
-
-    -- Standardmäßig deaktivieren
     PromptSetEnabled(promptJobStart, false)
     PromptSetVisible(promptJobStart, false)
 end)
