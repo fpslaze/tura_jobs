@@ -1,118 +1,197 @@
 local Core = exports.vorp_core:GetCore()
+local Menu = exports.vorp_menu:GetMenuData()
+
+local savedPaycheck = 0;
+local isJobActive = false;
+local xp = 5;
 
 
-local NPC <const> = {
-    [1] = {
-        name = "Albert",
-        position = vec4(0, 0, 0, 120),
-        modelhash = "A_M_M_STRDEPUTYRESIDENT_01"
-    },
+local controlKey = 0x760A9C6F -- (E-Taste)
+local promptJobStart
 
-    [2] = {
-        name = "Frank",
-        position = vec4(0, 0, 0, 120),
-        modelhash = "A_M_M_UniCoachGuards_01"
+Citizen.CreateThread(function()
+    local str = "Job-Menu öffnen!"
+    promptJobStart = PromptRegisterBegin()
+    PromptSetControlAction(promptJobStart, controlKey)
+    PromptSetText(promptJobStart, CreateVarString(10, "LITERAL_STRING", str))
+    PromptSetStandardMode(promptJobStart, true)
+    PromptRegisterEnd(promptJobStart)
+
+    -- Standardmäßig deaktivieren
+    PromptSetEnabled(promptJobStart, false)
+    PromptSetVisible(promptJobStart, false)
+end)
+
+
+
+function ShowPromt(promtid)
+    PromptSetEnabled(promts[1], true)
+    PromptSetVisible(promts[1], true)
+end
+
+function HidePromt(promtid)
+    PromptSetEnabled(promts[1], false)
+    PromptSetVisible(promts[1], false)
+end
+
+local function getDistance(index)
+    local coords = GetEntityCoords(PlayerPedId())
+    local coords2 = vector3(Config.Npc[index].NpcPosition.x, Config.Npc[index].NpcPosition.y,
+        Config.Npc[index].NpcPosition.z)
+    return #(coords - coords2)
+end
+
+local function LoadModel(model)
+    if not HasModelLoaded(model) then
+        RequestModel(model, false)
+        repeat Wait(0) until HasModelLoaded(model)
+    end
+end
+
+
+local function AddBlip(index)
+    if (Config.Npc[index].blipAllowed) then
+        local blip = BlipAddForCoords(1664425300, Config.Npc[index].NpcPosition.x, Config.Npc[index].NpcPosition.y,
+            Config.Npc[index].NpcPosition.z)
+        SetBlipSprite(blip, Config.Npc[index].blipSprite, true)
+        SetBlipScale(blip, 0.2)
+        SetBlipName(blip, Config.Npc[index].name)
+        Config.Npc[index].BlipHandle = blip
+
+        print("Ein Blip für den Index " .. index .. " wurde erstellt!")
+    end
+end
+
+Citizen.CreateThread(function()
+    AddBlip(1)
+end)
+
+---@param index integer
+function SpawnNPC(index)
+    local v = Config.npc[index]
+    LoadModel(v.NpcModel)
+    local npc = CreatePed(joaat(v.NpcModel), v.NpcPosition.x, v.NpcPosition.y, v.NpcPosition.z, v.NpcPosition.h, false,
+        false, false, false)
+    repeat Wait(0) until DoesEntityExist(npc)
+    PlaceEntityOnGroundProperly(npc, true)
+    Citizen.InvokeNative(0x283978A15512B2FE, npc, true)
+    SetEntityCanBeDamaged(npc, false)
+    SetEntityInvincible(npc, true)
+    FreezeEntityPosition(npc, true)
+    Wait(1000)
+    TaskStandStill(npc, -1)
+    SetBlockingOfNonTemporaryEvents(npc, true)
+    SetModelAsNoLongerNeeded(v.NpcModel)
+
+    if index ~= 0 then
+        AddBlip(index)
+    end
+
+    AddBlip(index)
+end
+
+Citizen.CreateThread(function()
+    repeat Wait(2000) until LocalPlayer.state.IsInSession
+end)
+
+function OpenMenu()
+    Menu.CloseAll()
+    MenuElements = {
+
+        {
+            label = "Aktuelle hinterlegtes Geld: " .. savedPaycheck .. "$",
+            value = "0.00$",
+            desc = "Hier siehst du dein Geld was du dir auszahlen lassen kannst!"
+        },
     }
-}
 
-local WorkCore = {}
+    if isJobActive then
+        table.insert(MenuElements, #MenuElements + 1,
+            {
+                label = "Aktuellen Job abbrechen!",
+                value = "endjob",
+                desc = "Aktuellen Job abbrechen!"
+            })
+    end
 
-local page = {}
 
-local pageEntrys = {}
+    if not isJobActive then
+        if xp >= Config.Cleaning.neededXp then
+            table.insert(MenuElements, #MenuElements + 1,
+                {
+                    label = "Job als Reiniger starten!",
+                    value = "startjob",
+                    desc = "Hier kannst du einen Job als Reinigungsdienst starten!!"
+                })
+        else
+            table.insert(MenuElements, #MenuElements + 1,
+                {
+                    label = "Du hast zu wenig XP um den Job zu starten!",
+                    value = "startjob",
+                    desc = "Du benötigst noch " .. Config.Cleaning.neededXp - xp .. " XP um den Job zu starten!"
+                })
+        end
+    end
 
-local cleaningPoints = { vec3(0, 0, 0), vec3(0, 0, 0), vec3(0, 0, 0), vec3(0, 0, 0), vec3(0, 0, 0), vec3(0, 0, 0), vec3(
-    0, 0, 0), vec3(0, 0, 0) }
 
-local paycheck = 0
 
-local ped = {}
+    Menu.Open("default", GetCurrentResourceName(), "OpenMenu",
 
+        {
+            title = "TURA JOBS",
+            subtext = "",
+            align = "align",
+            elements = MenuElements,
+            itemHeight = "2vh",
+        },
+
+
+        function(data, menu)
+            if (data.current == "backup") then
+                return _G[data.trigger](any, any)
+            end
+            if data.current.value == "startjob" then
+                isJobActive = true;
+                StartWork()
+                menu.close()
+                return
+            else
+                if data.current.value == "endjob" then
+                    isJobActive = false;
+                    menu.close()
+                    Core.NotifyTip("Du hast deinen Job als beendet!")
+                    menu.open()
+                    return
+                end
+            end
+
+            if data.current.info == "param" then
+                return menu.close()
+            end
+        end, function(data, menu)
+            menu.close()
+        end)
+end
+
+function StartWork()
+    Core.NotifyTip("Du hast deinen Job als Reiniger gestartet!")
+end
 
 Citizen.CreateThread(function()
-    CreateNPC(1)
-end)
-
-Citizen.CreateThread(function()
-    local __player = PlayerId()
-    while true do
-        if GetDistance(GetEntityCoords(__player), NPC[1].position) <= 3 and
-            IsControlJustReleased(0, 0x760A9C6F) then
-            OpenMenu()
-        end
-        Citizen.Wait(1)
-    end
-end)
-
-function OpenMenu(data)
-    if not data then
-        data = "default"
-    end
-end
-
-function GetDistance(coords1, coords2)
-    return #coords1 - coords2
-end
-
----@param npcid integer
-function CreateNPC(npcid)
-    while not HasModelLoaded(NPC[npcid].modelhash) do
-        Wait(10)
-    end
-    ped[#ped + 1] = CreatePed(0, NPC[npcid].modelhash, NPC[npcid].position.x, NPC[npcid].position.y,
-        NPC[npcid].position.z, NPC[npcid].position.w, false, false)
-end
-
-local inWork = false
-local currentJobPoint = nil
-
-WorkCore.StartWork = function()
-    if inWork then
-        Core.NotifyTip("Du hast bereits eine Aktive Aufgabe!", 4000)
-        return
-    end
-
-    if inWork == false and paycheck ~= 0 then
-        Core.NotifyTip("Hole zuerst deinen Paycheck ab bevor du einen neuen Job anfangen kannst!", 4000)
-        return
-    end
-
-    print("Du hast den Job erfolgreich gestartet")
-
-
-    currentJobPoint = cleaningPoints[math.random(1, #cleaningPoints)]
-
-    local __player = PlayerId()
-    local isPressed = false
+    local npcCoords = vector3(-748.4995, -1282.0966, 46.0478) -- Position des NPCs
 
     while true do
-        if GetDistance(GetEntityCoords(__player), currentJobPoint) <= 2 and
-            IsControlJustReleased(0, 0x760A9C6F) then
-            StartWorkAnim()
+        local playerCoords = GetEntityCoords(PlayerPedId())
+        local distance = #(playerCoords - npcCoords)
+
+        if getDistance(1) <= 3.0 then
+            PromptSetEnabled(promptJobStart, true)
+            PromptSetVisible(promptJobStart, true)
+        else
+            PromptSetEnabled(promptJobStart, false)
+            PromptSetVisible(promptJobStart, false)
         end
-        Citizen.Wait(1)
+
+        Citizen.Wait(1) -- Performance sparen
     end
-end
-
-function StartWorkAnim()
-
-end
-
----@param name string
----@param payout integer
----@param diff string
----@param neededTasks number
-function AddPage(name, payout, diff, neededTasks)
-    page = { name = name, payoutforaction = payout, difficulty = diff, neededtaskstoearn = neededTasks }
-end
-
-function GetPage(name)
-    if page[name] == nil then
-        return 0
-    end
-end
-
-RegisterCommand("testnpc", function()
-    CreateNPC(1)
-    Core.NotifyTip("Du hast den NPC mit der id 1 gesetzt!")
-end, false)
+end)
