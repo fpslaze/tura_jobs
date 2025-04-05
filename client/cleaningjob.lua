@@ -178,7 +178,7 @@ function StartWork()
 end
 
 Citizen.CreateThread(function()
-    local npcCoords = vector3(-748.4995, -1282.0966, 46.0478) -- Position des NPCs
+    local npcCoords = vector3(-748.4995, -1282.0966, 46.0478)
 
     while true do
         local playerCoords = GetEntityCoords(PlayerPedId())
@@ -192,6 +192,6 @@ Citizen.CreateThread(function()
             PromptSetVisible(promptJobStart, false)
         end
 
-        Citizen.Wait(1) -- Performance sparen
+        Citizen.Wait(1)
     end
 end)
