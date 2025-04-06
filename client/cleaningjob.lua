@@ -5,14 +5,14 @@ local savedPaycheck = 0;
 local isJobActive = false;
 local xp = 5;
 
+local Keys = {["E"] = 0x760A9C6F }
 
-local controlKey = 0x760A9C6F -- (E-Taste)
 local promptJobStart
 
 Citizen.CreateThread(function()
     local str = "Job-Menu öffnen!"
     promptJobStart = PromptRegisterBegin()
-    PromptSetControlAction(promptJobStart, controlKey)
+    PromptSetControlAction(promptJobStart, Keys["E])
     PromptSetText(promptJobStart, CreateVarString(10, "LITERAL_STRING", str))
     PromptSetStandardMode(promptJobStart, true)
     PromptRegisterEnd(promptJobStart)
